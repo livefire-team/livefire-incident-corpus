@@ -1,0 +1,62 @@
+# WS3 on a laptop with only Docker: the MCP server on fixtures (no Azure, no GitHub) and a stand-in Ops Service for
+# the recovery endpoint. Ports are published on 127.0.0.1 only.
+#   scripts/compose-env.sh        once: writes .env with three fresh endpoint keys, the Ops key and one test grant
+#   docker compose up -d --build
+#   curl http://127.0.0.1:8100/health
+#   docker compose run --rm smoke both smoke tests, from inside the network (the test grant works once: to rerun,
+#                                 docker compose restart fake-ops first)
+#   docker compose exec mcp-server cat /home/appuser/evidence/drill-local-0001/events.jsonl   the audit trail
+#   docker compose down -v        stop, and delete the audit volume
+services:
+  mcp-server:
+    build: src/mcp-server
+    image: livefire/mcp-server:local
+    environment:
+      BACKEND: fixtures
+      AUTH_MODE: key
+      PLANNER_KEY: ${PLANNER_KEY:?run scripts/compose-env.sh first}
+      ENGINEER_KEY: ${ENGINEER_KEY:?run scripts/compose-env.sh first}
+      RECOVERY_KEY: ${RECOVERY_KEY:?run scripts/compose-env.sh first}
+      OPS_URL: http://fake-ops:8200
+      OPS_AGENT_KEY: ${OPS_AGENT_KEY:?run scripts/compose-env.sh first}
+      # The audit trail, <drill_id>/events.jsonl, in a volume on the app user's home: the server runs as uid 10001,
+      # and a new named volume takes the owner of the image directory it mounts over
+      EVENT_SOURCE: dir:/home/appuser/evidence
+      MCP_ALLOWED_HOSTS: "127.0.0.1:*,localhost:*,mcp-server:*"   # mcp-server: the smoke service's host name
+    volumes:
+      - evidence:/home/appuser
+    ports:
+      - "127.0.0.1:8100:8000"
+    depends_on:
+      - fake-ops
+
+  fake-ops:                                       # a local stand-in for WS2's Ops Service; never deploy it
+    image: livefire/mcp-server:local              # the server image already has Starlette and uvicorn
+    pull_policy: never                            # built locally by the mcp-server service
+    command: ["python", "/scripts/fake-ops.py"]
+    environment:
+      HOST: 0.0.0.0
+      PORT: "8200"
+      OPS_AGENT_KEY: ${OPS_AGENT_KEY:?run scripts/compose-env.sh first}
+      FAKE_GRANTS: ${FAKE_GRANTS:-}
+    volumes:
+      - ./scripts/fake-ops.py:/scripts/fake-ops.py:ro
+
+  smoke:                                          # opt-in: docker compose run --rm smoke
+    image: livefire/mcp-server:local
+    pull_policy: never
+    profiles: ["smoke"]
+    entrypoint: ["sh", "-c", "python /scripts/mcp-smoke.py drill-local-0001 && python /scripts/recovery-smoke.py drill-local-0001"]
+    environment:
+      MCP_URL: http://mcp-server:8000
+      PLANNER_KEY: ${PLANNER_KEY:?run scripts/compose-env.sh first}
+      ENGINEER_KEY: ${ENGINEER_KEY:?run scripts/compose-env.sh first}
+      RECOVERY_KEY: ${RECOVERY_KEY:?run scripts/compose-env.sh first}
+      GRANT: ${GRANT:-}
+    volumes:
+      - ./scripts:/scripts:ro
+    depends_on:
+      - mcp-server
+
+volumes:
+  evidence:
