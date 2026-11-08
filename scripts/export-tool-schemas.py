@@ -42,7 +42,7 @@ def build() -> dict:
                  "annotations": t.annotations.model_dump(exclude_none=True) if t.annotations else {},
                  "input_schema": t.input_schema} for t in listed]}
         return out
-    return {"contract": "mcp-tools", "version": "2.2", "transport": "MCP streamable HTTP, stateless, JSON responses",
+    return {"contract": "mcp-tools", "version": "2.3", "transport": "MCP streamable HTTP, stateless, JSON responses",
             "endpoints": asyncio.run(tools())}
 
 

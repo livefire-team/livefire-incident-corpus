@@ -8,6 +8,7 @@ description = "Azure built-in role definition IDs are public GUIDs, not credenti
 regexes = [
   '''4633458b-17de-408a-b874-0445c86b69e6''',   # Key Vault Secrets User
   '''21090545-7ca7-4776-b22c-e363652d74d2''',   # Key Vault Reader (the Planner's secret metadata)
+  '''b86a8fe4-44ce-4948-aee5-eccb2c155cd7''',   # Key Vault Secrets Officer (WS1/WS2 build guides under doc/)
 ]
 
 [[allowlists]]

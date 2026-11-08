@@ -1,6 +1,6 @@
 {
   "contract": "mcp-tools",
-  "version": "2.2",
+  "version": "2.3",
   "transport": "MCP streamable HTTP, stateless, JSON responses",
   "endpoints": {
     "planner": {
@@ -184,7 +184,7 @@
         },
         {
           "name": "read_repository_context",
-          "description": "Read one source, docs or runbook file at the drill's pinned commit.",
+          "description": "Read one order-service source or runbook file at the drill's pinned commit.",
           "annotations": {
             "read_only_hint": true,
             "destructive_hint": false,

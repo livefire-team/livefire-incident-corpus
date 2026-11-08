@@ -1,6 +1,6 @@
 # WS3 architecture: the MCP server in LiveFire Fusion
 
-**Component:** LiveFire MCP server (`ca-mcp`) · **Workstream:** WS3 · **Contract:** v2.2 · **Status:** running in Azure,
+**Component:** LiveFire MCP server (`ca-mcp`) · **Workstream:** WS3 · **Contract:** v2.3 · **Status:** running in Azure,
 used by real Foundry agents in every Autonomous drill scenario (Nov 1–2, 2026)
 
 ## 1. What this component is, in one paragraph

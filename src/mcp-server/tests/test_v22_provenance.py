@@ -20,7 +20,7 @@ def test_every_result_carries_the_tool_version_and_the_authorization_result(serv
         ("get_network_rules", {"drill_id": DRILL}),
         ("read_repository_context", {"drill_id": DRILL, "path": "infra/main.bicep"})]))
     ok, refused = data(ok), data(refused)
-    assert ok["tool_version"] == refused["tool_version"] == "2.2"
+    assert ok["tool_version"] == refused["tool_version"] == "2.3"
     assert ok["authorization"] == {"decision": "allow", "endpoint": "planner"}
     assert refused["authorization"] == {"decision": "deny", "endpoint": "planner"} and refused["refused"]
     assert ok["redaction"] == {"applied": False, "count": 0, "kinds": []}
@@ -32,7 +32,7 @@ def test_every_audit_event_names_the_version_the_caller_and_the_source(server):
     run(session_call(server["url"] + "/engineer/mcp", ENGINEER_KEY, [
         ("create_candidate_branch", {"drill_id": drill, "attempt": 1})]))
     planner, engineer = (e["details"] for e in events(server, drill))
-    assert planner["tool_version"] == engineer["tool_version"] == "2.2"
+    assert planner["tool_version"] == engineer["tool_version"] == "2.3"
     assert planner["caller"] == "key:planner" and engineer["caller"] == "key:engineer"
     assert planner["source"] == "key-vault:secret-metadata"                        # where the data came from
     assert engineer["source"].startswith("github:") and "args_sha256" in planner

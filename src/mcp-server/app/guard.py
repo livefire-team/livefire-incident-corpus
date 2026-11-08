@@ -15,7 +15,7 @@ log = logging.getLogger("mcp.guard")
 tracer = trace.get_tracer("livefire.mcp")
 
 DRILL_ID_PATTERN = r"^drill-[A-Za-z0-9-]{1,64}$"
-TOOL_VERSION = "2.2"         # contracts/mcp-tools.md: every result and audit event carries it
+TOOL_VERSION = "2.3"         # contracts/mcp-tools.md: every result and audit event carries it
 MAX_TEXT = 20_000            # characters of any single file or document returned
 MAX_RESULT = 32_000          # characters of a whole tool result
 

@@ -1,6 +1,6 @@
 # WS3 integration contract: how other workstreams call and use the MCP server
 
-**Service:** LiveFire MCP server (`ca-mcp`), WS3 · **Contract version:** 2.2 · **Status:** running in Azure, proven
+**Service:** LiveFire MCP server (`ca-mcp`), WS3 · **Contract version:** 2.3 · **Status:** running in Azure, proven
 end to end by real agent drills (Nov 1–2, 2026)
 
 This is the agreement between WS3 and the workstreams that call it or that it calls. The full, per-tool reference is
@@ -99,7 +99,7 @@ evidence and audit trail. Use the same ID the Drill Runner uses for the drill.
 ```json
 {"source": "github:runbooks/order-service-keyvault-recovery.md@main", "untrusted_content": true,
  "redaction": {"applied": false, "count": 0, "kinds": []},
- "tool_version": "2.2", "authorization": {"decision": "allow", "endpoint": "planner"},
+ "tool_version": "2.3", "authorization": {"decision": "allow", "endpoint": "planner"},
  "data": { ... }}
 ```
 
@@ -119,7 +119,7 @@ the Ops Service unavailable), it returns:
 ```json
 {"source": "livefire:read_repository_context", "untrusted_content": false, "refused": true,
  "error": "infra/main.bicep is outside the paths this tool may read",
- "tool_version": "2.2", "authorization": {"decision": "deny", "endpoint": "planner"}}
+ "tool_version": "2.3", "authorization": {"decision": "deny", "endpoint": "planner"}}
 ```
 
 These are results because Foundry fails a whole agent turn when an MCP tool returns an error; as a result, the
@@ -145,7 +145,7 @@ The full argument and result reference is `contracts/mcp-tools.md`; the schemas 
 | `get_network_rules` | – | the twin SQL server's public access, firewall rules, `allows_azure_services` |
 | `search_incident_history` | `query` (2–200 chars), `top`, optional `from_date` / `to_date` (`YYYY-MM-DD`) | up to 5 incidents and runbooks from AI Search (keyword or hybrid), each with `id`, `source`, `occurred_at` and `score`; only those in the date window when one is given |
 | `read_runbook` | `name` (bare name, `.md` or `runbooks/` path) | `{path, ref, sha256, chars, content}`: the runbook at the pinned commit, with its checksum |
-| `read_repository_context` | `path` under `src/order-service/**`, `docs/**`, `runbooks/*.md` | `{path, ref, sha256, chars, content}`, likewise |
+| `read_repository_context` | `path` under `src/order-service/**`, `runbooks/*.md` (v2.3: not `docs/**`) | `{path, ref, sha256, chars, content}`, likewise |
 | `get_commit_history` | `path` (same paths), `limit` ≤ 10 | recent commits touching the path |
 
 ### Engineer: `/engineer/mcp`, six branch-only tools
@@ -196,7 +196,7 @@ Every tool call appends one event to the drill's log (`EVENT_SOURCE`: `blob:<acc
 
 ```json
 {"ts": "2026-11-02T01:50:19.830Z", "drill_id": "drill-20261102-0001", "action": "planner.tool_call",
- "result": "deny", "details": {"tool": "read_repository_context", "tool_version": "2.2", "endpoint": "planner",
+ "result": "deny", "details": {"tool": "read_repository_context", "tool_version": "2.3", "endpoint": "planner",
  "caller": "key:planner", "decision": "deny", "summary": "infra/main.bicep is outside the paths this tool may read",
  "source": "livefire:read_repository_context", "args_sha256": "d92fe0a6ebbfef1f", "latency_ms": 0}}
 ```
@@ -205,7 +205,7 @@ Every tool call appends one event to the drill's log (`EVENT_SOURCE`: `blob:<acc
 | --- | --- |
 | `action` | `planner.tool_call`, `engineer.tool_call`, `recovery.tool_call` |
 | `result` / `details.decision` | `allow` (served), `deny` (refused: path, configuration, or a credential for another endpoint), `error` (failed: a missing file, a backend error) |
-| `details.tool_version` | the contract version that served the call (`2.2`) |
+| `details.tool_version` | the contract version that served the call (`2.3`) |
 | `details.caller` | `key:<endpoint>` in key mode; `entra:<agent object ID>` in Entra mode (each endpoint accepts exactly one identity) |
 | `details.source` | the result's `source`: where the data came from (`livefire:<tool>` for a refusal) |
 | `details.summary` | at most 160 characters; the refusal reason for `deny` |
@@ -230,6 +230,8 @@ caller's role. Calls without a valid `drill_id` aren't recorded. Every call also
 
 ## 9. Versioning and change control
 
+- **v2.3 (Nov 8, 2026), narrowing:** `docs/**` removed from the Planner's read allowlist (POC ADR-004, WS2's
+  hand-off). No tool, argument or result field changed; a `docs/` path is now refused.
 - **v2.2 (Nov 2, 2026), additive:** tool version, authorization result and redaction metadata on every result; tool
   version, caller and source on every audit event; file checksums; an optional date range on incident search. These
   close the blueprint's requirements in sections 4.4, 8.1 and A.2. v2.1 callers keep working unchanged.

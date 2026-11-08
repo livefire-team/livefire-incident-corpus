@@ -34,6 +34,8 @@ param logAnalyticsWorkspaceName string
 param orderAppName string
 param twinSqlServerName string
 param desiredSqlDbName string = 'orders'
+@allowed(['rbac', 'accessPolicy'])
+param kvPermissionModel string = 'rbac'          // the twin vault's model (WS1/WS2: same value as the twin module)
 
 resource controlRg 'Microsoft.Resources/resourceGroups@2024-03-01' existing = { name: controlRgName }
 resource twinRg 'Microsoft.Resources/resourceGroups@2024-03-01' existing = { name: twinRgName }
@@ -80,6 +82,7 @@ module mcpTwinAccess 'modules/mcp-twin-access.bicep' = { // WS3: the evidence to
     logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
     sqlServerName: twinSqlServerName
     orderAppName: orderAppName
+    kvPermissionModel: kvPermissionModel
   }
 }
 

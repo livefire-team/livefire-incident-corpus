@@ -5,6 +5,9 @@ param logAnalyticsWorkspaceName string
 @description('v2.0: the twin SQL server and order app, for get_network_rules and get_app_configuration. Empty skips.')
 param sqlServerName string = ''
 param orderAppName string = ''
+@description('The twin vault\'s permission model: the same kvPermissionModel main.bicep passes to WS1\'s twin module')
+@allowed(['rbac', 'accessPolicy'])
+param kvPermissionModel string = 'rbac'
 
 var readerRoleId = 'acdd72a7-3385-48ef-bd42-f606fba81ae7'
 var logAnalyticsReaderRoleId = '73c42c96-874c-492b-b04d-ab87d138a893'
@@ -40,8 +43,26 @@ resource logsReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   }
 }
 
-// v2.0: get_secret_metadata lists the db-password secret's versions; Key Vault Reader can't read any value
-resource vaultMetadataReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+// v2.0: get_secret_metadata lists the db-password secret's versions; Key Vault Reader can't read any value.
+// An access-policy vault ignores RBAC on the data plane, so there the same right is an access policy with secrets
+// 'list' only: names, versions and attributes, never a value ('get' is what reads values, and it isn't granted).
+// WS1's twin.bicep sets the vault's whole policy list, so a twin redeploy drops this entry; main.bicep re-adds it,
+// because this module takes the twin's outputs and so deploys after it.
+resource vaultMetadataPolicy 'Microsoft.KeyVault/vaults/accessPolicies@2023-07-01' = if (kvPermissionModel == 'accessPolicy') {
+  parent: vault
+  name: 'add'
+  properties: {
+    accessPolicies: [
+      {
+        tenantId: tenant().tenantId
+        objectId: mcpPrincipalId
+        permissions: { secrets: ['list'] }
+      }
+    ]
+  }
+}
+
+resource vaultMetadataReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (kvPermissionModel == 'rbac') {
   name: guid(vault.id, mcpPrincipalId, keyVaultReaderRoleId)
   scope: vault
   properties: {

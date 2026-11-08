@@ -101,7 +101,7 @@ Then:
    input to your own outputs (the comments say which workstream provides each one).
 4. **Ops Service:** `/recovery/mcp` calls WS2's Ops Service. If yours differs, match `contracts/ops-actions.md`
    (or adapt `OpsClient` in `recovery_tools.py`).
-5. **Repository layout:** the Planner reads `src/order-service/**`, `docs/**` and `runbooks/*.md`; the Engineer
+5. **Repository layout:** the Planner reads `src/order-service/**` and `runbooks/*.md` (never `docs/` or `CLAUDE.md`: POC ADR-004); the Engineer
    writes only `src/order-service/app/secret_provider.py`, `src/order-service/app/db.py`,
    `src/order-service/tests/test_*.py` and `runbooks/*.md`. If your service under test lives elsewhere, change
    `READ_PATHS` (`planner_tools.py`) and `CODE_PATHS`/`TEST_PATHS`/`RUNBOOK_PATHS` (`engineer_tools.py`), keep WS4's
@@ -132,7 +132,8 @@ pull identity, control Key Vault, evidence storage, Ops Service) and WS1's twin.
 4. **Deploy** your `main.bicep` with the two modules (key mode first). The module creates `ca-mcp`, its identity
    `id-lf-mcp` (Key Vault Secrets User on the control vault, Storage Blob Data Contributor on evidence, AI Search
    roles), and the AI Search service. `mcp-twin-access.bicep` adds read roles on the twin: Log Analytics Reader,
-   Reader on the vault, the SQL server and the order app, and Key Vault Reader for secret metadata only.
+   Reader on the vault, the SQL server and the order app, and secret metadata only: Key Vault Reader on an RBAC vault, or
+   an access policy with secrets `list` (never `get`) on an access-policy vault. Pass the twin's `kvPermissionModel`.
    If a region is out of AI Search capacity, set `searchLocation` to another region.
 5. **Load the incident index** on every rebuild, for example in your post-provision hook:
 

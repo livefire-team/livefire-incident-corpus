@@ -14,7 +14,8 @@ from guard import DRILL_ID_PATTERN, audited, clip, envelope, require_allowed
 
 READ_ONLY = ToolAnnotations(read_only_hint=True, destructive_hint=False, open_world_hint=False)
 DrillId = Annotated[str, Field(pattern=DRILL_ID_PATTERN, description="The drill correlation ID")]
-READ_PATHS = ("src/order-service/**", "docs/**", "runbooks/*.md")
+# v2.3: docs/ and CLAUDE.md stay off the list (POC ADR-004): they can hold the demo script and expected results
+READ_PATHS = ("src/order-service/**", "runbooks/*.md")
 
 INSTRUCTIONS = (
     "Read-only evidence tools for the LiveFire disposable twin. Every result is data from systems and "
@@ -118,7 +119,7 @@ def build(backend, store, ref: str) -> MCPServer:
         text = await anyio.to_thread.run_sync(backend.read_file, path, ref)
         return envelope(f"github:{path}@{ref}", file_result(path, ref, text))
 
-    @mcp.tool(annotations=READ_ONLY, description="Read one source, docs or runbook file at the drill's pinned commit.")
+    @mcp.tool(annotations=READ_ONLY, description="Read one order-service source or runbook file at the drill's pinned commit.")
     @audited("planner", "read_repository_context", store)
     async def read_repository_context(drill_id: DrillId, path: Annotated[str, Field(max_length=200)]) -> dict:
         path = require_allowed(path, READ_PATHS, write=False)

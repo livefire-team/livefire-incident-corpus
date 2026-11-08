@@ -47,7 +47,7 @@ def test_planner_tools_return_labelled_redacted_evidence(server):
         ("get_identity_snapshot", {"drill_id": DRILL}),
         ("search_incident_history", {"drill_id": DRILL, "query": "secret rotation restart"}),
         ("read_runbook", {"drill_id": DRILL, "name": "order-service-keyvault-recovery"}),
-        ("read_repository_context", {"drill_id": DRILL, "path": "docs/architecture-note.md"}),
+        ("read_repository_context", {"drill_id": DRILL, "path": "src/order-service/README.md"}),
         ("get_commit_history", {"drill_id": DRILL, "path": "src/order-service/app/secret_provider.py"}),
     ]))
     t = data(tele)
@@ -57,6 +57,17 @@ def test_planner_tools_return_labelled_redacted_evidence(server):
     assert "Recovery is complete" in data(runbook)["data"]["content"]
     assert "Password=[redacted]" in data(doc)["data"]["content"] and "Example-Not-Real" not in json.dumps(data(doc))
     assert data(commits)["data"]["commits"][0]["message"].startswith("perf(order-service)")
+
+
+def test_planner_cannot_read_docs_or_test_oracles(server):
+    """v2.3 (POC ADR-004 and WS2's hand-off): docs/, CLAUDE.md and the paths holding the smoke tests' expected results
+    stay off the Planner's allowlist, so the agents can't read the demo script or the answers."""
+    paths = ["docs/architecture.md", "docs/handoffs.md", "CLAUDE.md", "CLAUDE.local.md", "src/ops-service/ops/main.py",
+             "referee/assert_order.py", "scripts/drill.sh", "src/order-service/../../docs/ADR.md"]
+    results = run(session_call(server["url"] + "/planner/mcp", PLANNER_KEY,
+                               [(tool, {"drill_id": DRILL, "path": p}) for p in paths
+                                for tool in ("read_repository_context", "get_commit_history")]))
+    assert all(data(r)["refused"] for r in results), [data(r) for r in results if not data(r).get("refused")]
 
 
 def test_planner_refuses_bad_paths_and_arguments(server):

@@ -1,11 +1,12 @@
-# MCP tool contract, v2.2
+# MCP tool contract, v2.3
 
 v1.0 was frozen at G1 (Oct 26). v1.1 (Oct 30) changed only the Authentication section. v2.0 (Oct 31) adds three
 read-only Planner tools and a telemetry query, so the Planner can tell four restore defects apart, and lets the
 Engineer patch one more file. v2.1 (Oct 31) adds the Recovery agent's endpoint, which executes approved
 recovery actions with a grant. v2.2 (Nov 2) adds provenance and audit fields the blueprint requires (4.4, 8.1,
-A.2) and an optional date range on incident search; additive only (see "v2.2" below). Any other change needs the
-lead's approval and a version bump.
+A.2) and an optional date range on incident search; additive only (see "v2.2" below). v2.3 (Nov 8) narrows the
+Planner's read allowlist: `docs/**` is removed (see "v2.3" below). Any other change needs the lead's approval and a
+version bump.
 
 Endpoints: https://<mcp-host>/planner/mcp, https://<mcp-host>/engineer/mcp and (v2.1)
 https://<mcp-host>/recovery/mcp, MCP streamable HTTP, stateless, JSON responses. Post to the path with no trailing
@@ -36,7 +37,7 @@ drill's evidence as planner.tool_call, engineer.tool_call or recovery.tool_call.
 | get_network_rules (v2.0) | none | The twin SQL server: public network access and firewall rules |
 | search_incident_history | query, top, (v2.2) from_date, to_date | 2 to 200 characters; 5 results; order service only; dates YYYY-MM-DD bound occurred_at |
 | read_runbook | name | ^[a-z0-9-]{1,64}$, at the pinned commit |
-| read_repository_context | path | src/order-service/**, docs/**, runbooks/*.md |
+| read_repository_context | path | src/order-service/**, runbooks/*.md (v2.3: docs/** removed) |
 | get_commit_history | path, limit | Same paths; 10 commits |
 
 The v2.0 results (`data`):
@@ -111,11 +112,23 @@ of range, an action outside the catalog) remain MCP errors; the Drill Runner ret
 agent which call was rejected (`agent.tool_rejected`). `read_runbook` accepts the bare name, the file name or the
 path (`order-service-keyvault-recovery`, `….md`, `runbooks/….md`).
 
+## v2.3: docs/ off the Planner's allowlist (2026-11-08)
+
+Narrowing, not additive: `read_repository_context` and `get_commit_history` now refuse `docs/**`. Tool names, arguments
+and result shapes are unchanged, so WS4's `allowed_tools` stay as they are.
+
+- **Why:** POC ADR-004 (accepted Oct 28) and WS2's WS3 hand-off: `docs/`, `CLAUDE.md` and the paths that hold the
+  smoke tests' expected results (`src/ops-service/`, `referee/`, `scripts/`) must stay unreadable to the agents, so
+  they can't read the demo script or the answers. Only `docs/` was on the list; the others never were.
+- **Allowlist now:** `src/order-service/**` and `runbooks/*.md`. A path outside it is refused as a result
+  (`refused: true`), as before.
+- Every result's `tool_version` is `"2.3"`.
+
 ## v2.2: provenance and audit fields (2026-11-02)
 
 Additive: no tool, argument or result field was removed or renamed, so v2.1 callers keep working.
 
-- **Every result** (served, refused or failed) carries `"tool_version": "2.2"` and
+- **Every result** (served, refused or failed) carries `"tool_version"` (`"2.2"` then, `"2.3"` now) and
   `"authorization": {"decision": "allow" | "deny" | "error", "endpoint": "planner" | "engineer" | "recovery"}`.
 - **Every served result** carries `"redaction": {"applied", "count", "kinds"}`: how many values were redacted, by
   kind (`private_key`, `token`, `github_token`, `credential`, `sas_signature`). Never the redacted value.
