@@ -1,6 +1,3 @@
-__pycache__/
-.pytest_cache/
-.venv/
-evidence/
 .env
+*.pem
 github-vars.env

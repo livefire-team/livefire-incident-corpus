@@ -1,7 +1,7 @@
 # Synthetic evidence corpus
 
 Every record here is invented for the LiveFire drill. Loaded into the AI Search index `incidents`
-by `scripts/load-incidents.py`.
+by `scripts/load-incidents.py` in `livefire-team/livefire-fusion-poc` (see the top-level README).
 
 - INC-1042 and FND-17 are the recurring operational debt the Planner should connect to the
   `perf(order-service)` commit.
